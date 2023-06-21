@@ -1,0 +1,52 @@
+name: Fork template repository and replace variables in in resulting repository files
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  templated_files_variables: "__ORGANIZATION/bluemapping,__PROJECT/bluemapping,__REPOSITORY/registry-infrastructure,__TERRAFORM_ORGANIZATION/bluemapping"
+
+jobs:
+  fork_repository:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Fork Repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          SOURCE_REPO: "codingones-github-templates/aws-service-registry"
+        run: |
+          git remote -v
+          git remote add upstream https://github.com/$SOURCE_REPO.git
+          git fetch upstream
+          git branch --set-upstream-to=upstream/main main
+          git remote -v
+          gh repo sync ${{ env.github_repository }} -b main --force
+
+      - name: Replace variables placeholders in templated (.json/.tf/.html/.md/.ts) files
+        run: |
+          IFS=', ' read -r -a pairs <<< "${{ env.templated_files_variables }}"
+          for pair in "${pairs[@]}"; do
+            IFS='/' read -r -a kv <<< "$pair"
+            placeholder=${kv[0]}
+            replacement=${kv[1]}
+            find . -type f \( -name "*.json" -o -name "*.tf" -o -name "*.html" -o -name "*.md" -o -name "*.ts" \) -exec sed -i "s/${placeholder}/${replacement}/g" {} \;
+          done
+
+      - name: Commit and push updated files
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add . 
+          git commit -m "feat: replace templated files variables"
+          git push origin main --force
