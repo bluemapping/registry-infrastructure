@@ -1,9 +1,9 @@
 locals {
   export_as_organization_variable = {
-    "target_image" = {
+    "compute_image_most_recent" = {
       hcl       = false
       sensitive = false
-      value     = "${aws_ecr_repository.api.repository_url}:${data.aws_ecr_image.api_image.image_tags[0]}"
+      value     = "${aws_ecr_repository.compute.repository_url}:${data.aws_ecr_image.api_image.image_tags[0]}"
     }
   }
 }
