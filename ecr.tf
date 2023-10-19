@@ -9,7 +9,7 @@ resource "aws_ecr_repository" "compute" {
   tags = local.tags
 }
 
-data "aws_ecr_image" "api_image" {
+data "aws_ecr_image" "compute_image" {
   repository_name = aws_ecr_repository.compute.name
   most_recent     = true
 }
